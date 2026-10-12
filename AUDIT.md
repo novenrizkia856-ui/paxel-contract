@@ -150,3 +150,22 @@ Deployed with `script/Deploy.s.sol` to a fresh local Anvil node (chain id 31337)
 | 14 | Admin `updateStatus` to Frozen | success. History still has 3 entries. |
 
 There were no unexpected reverts. No mainnet RPC has been used.
+
+## Addendum 2026-10-12: PaxelAttestationRegistry
+
+Scope: `src/PaxelAttestationRegistry.sol` and the read helpers added to `PaxelRegistry`
+(`VERIFIER_ROLE`, `issuerOf`, `isVerifier`). Same checklist, short pass.
+
+| # | Check | Result |
+| --- | --- | --- |
+| 1 | Reentrancy exposure | Pass. No value, no payable functions. Calls to the registry are `view` (STATICCALL), and the registry address is immutable. |
+| 2 | Access control | Pass. `attest` needs `VERIFIER_ROLE` and refuses the passport issuer. `revoke` accepts only the signing verifier. |
+| 3 | Integer handling | Pass. Timestamps are stored as `uint64`. Ids are array indexes. |
+| 4 | Unbounded loops | Note. `activeAttestationCount` loops over the attestations on one fact. A verifier holds at most one standing attestation per fact, so the list grows only with verifiers and revoke and attest cycles. Per asset lists are paged. |
+| 5 | Role revoked | Pass. A verifier that loses the role stops counting toward levels at once and can still revoke its own record. |
+| 6 | Input validation | Pass. Zero fact hash, zero evidence hash, unknown asset and duplicate standing attestations revert. |
+| 7 | No delete or overwrite | Pass. Revocation only stamps `revokedAt`; every attestation stays readable. |
+
+Local end to end run on anvil (2026-10-12): deploy of all three contracts, roles, a passport with four
+events, three attestations and one revocation. Levels read L2 and L0 as expected, and a non verifier
+attest reverted with `NotVerifier`.

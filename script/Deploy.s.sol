@@ -5,8 +5,9 @@ import {Script, console2} from "forge-std/Script.sol";
 import {VmSafe} from "forge-std/Vm.sol";
 import {PaxelRegistry} from "../src/PaxelRegistry.sol";
 import {PaxelEventLog} from "../src/PaxelEventLog.sol";
+import {PaxelAttestationRegistry} from "../src/PaxelAttestationRegistry.sol";
 
-/// @notice Deploys PaxelRegistry and PaxelEventLog to any network, driven by environment variables.
+/// @notice Deploys PaxelRegistry, PaxelEventLog and PaxelAttestationRegistry to any network, driven by environment variables.
 ///
 ///           RPC_URL            RPC endpoint, passed on the command line as --rpc-url $RPC_URL
 ///           PRIVATE_KEY        deployer key. It becomes DEFAULT_ADMIN_ROLE on the registry.
@@ -21,7 +22,10 @@ import {PaxelEventLog} from "../src/PaxelEventLog.sol";
 ///
 ///         deployments/<DEPLOY_NETWORK>.json is written only when the run actually broadcasts.
 contract Deploy is Script {
-    function run() external returns (PaxelRegistry registry, PaxelEventLog eventLog) {
+    function run()
+        external
+        returns (PaxelRegistry registry, PaxelEventLog eventLog, PaxelAttestationRegistry attestations)
+    {
         uint256 deployerKey = vm.envOr("PRIVATE_KEY", uint256(0));
         uint256 expectedChainId = vm.envUint("CHAIN_ID");
         require(block.chainid == expectedChainId, "CHAIN_ID does not match the RPC");
@@ -33,26 +37,36 @@ contract Deploy is Script {
         else vm.startBroadcast();
         registry = new PaxelRegistry();
         eventLog = new PaxelEventLog(registry);
+        attestations = new PaxelAttestationRegistry(registry);
         vm.stopBroadcast();
 
         address deployer = deployerKey != 0 ? vm.addr(deployerKey) : msg.sender;
         require(registry.hasRole(registry.DEFAULT_ADMIN_ROLE(), deployer), "deployer is not admin");
         require(address(eventLog.registry()) == address(registry), "event log wired to wrong registry");
+        require(address(attestations.registry()) == address(registry), "attestations wired to wrong registry");
 
         console2.log("Deployer (admin)   ", deployer);
         console2.log("Chain id           ", block.chainid);
         console2.log("PaxelRegistry      ", address(registry));
         console2.log("PaxelEventLog      ", address(eventLog));
+        console2.log("PaxelAttestations  ", address(attestations));
+        console2.log("Deploy block       ", block.number);
 
         if (vm.isContext(VmSafe.ForgeContext.ScriptBroadcast) || vm.isContext(VmSafe.ForgeContext.ScriptResume)) {
-            _export(deployName, deployer, address(registry), address(eventLog));
+            _export(deployName, deployer, address(registry), address(eventLog), address(attestations));
         } else {
             console2.log("Dry run: nothing sent, deployments file not written. Add --broadcast to deploy.");
         }
     }
 
     /// @dev Writes deployments/<deployName>.json with the values the web config needs.
-    function _export(string memory deployName, address deployer, address registry, address eventLog) internal {
+    function _export(
+        string memory deployName,
+        address deployer,
+        address registry,
+        address eventLog,
+        address attestations
+    ) internal {
         string memory nl = "\n";
         string memory head = string.concat(
             "{",
@@ -82,6 +96,17 @@ contract Deploy is Script {
             '  "accessControl": "',
             vm.toString(registry),
             '",',
+            nl
+        );
+        body = string.concat(
+            body,
+            '  "attestationRegistry": "',
+            vm.toString(attestations),
+            '",',
+            nl,
+            '  "deployBlock": ',
+            vm.toString(block.number),
+            ",",
             nl
         );
         string memory tail =

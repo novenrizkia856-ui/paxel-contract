@@ -7,10 +7,13 @@ import {IPaxelRegistry} from "./interfaces/IPaxelRegistry.sol";
 /// @title PaxelRegistry
 /// @notice One permanent passport per tokenized real world asset. A passport is opened once by
 ///         its issuer and is never deleted. Reads are open to everyone.
-/// @dev Roles: DEFAULT_ADMIN_ROLE (the deployer) grants and revokes ISSUER_ROLE. An issuer writes
-///      only to the passports it registered, and only while it still holds ISSUER_ROLE.
+/// @dev Roles: DEFAULT_ADMIN_ROLE (the deployer) grants and revokes ISSUER_ROLE and VERIFIER_ROLE.
+///      An issuer writes only to the passports it registered, and only while it still holds
+///      ISSUER_ROLE. VERIFIER_ROLE is read by PaxelAttestationRegistry. This contract is the access
+///      control layer for the whole Paxel contract set.
 contract PaxelRegistry is AccessControl, IPaxelRegistry {
     bytes32 public constant ISSUER_ROLE = keccak256("ISSUER_ROLE");
+    bytes32 public constant VERIFIER_ROLE = keccak256("VERIFIER_ROLE");
 
     enum Status {
         Draft,
@@ -109,6 +112,16 @@ contract PaxelRegistry is AccessControl, IPaxelRegistry {
     /// @notice Returns the passport for `assetId`. Reverts if it was never registered.
     function getPassport(bytes32 assetId) external view returns (Passport memory) {
         return _existing(assetId);
+    }
+
+    /// @inheritdoc IPaxelRegistry
+    function issuerOf(bytes32 assetId) external view returns (address) {
+        return passports[assetId].issuer;
+    }
+
+    /// @inheritdoc IPaxelRegistry
+    function isVerifier(address account) external view returns (bool) {
+        return hasRole(VERIFIER_ROLE, account);
     }
 
     /// @inheritdoc IPaxelRegistry
