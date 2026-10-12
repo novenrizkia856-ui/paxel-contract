@@ -10,8 +10,25 @@ which gives each fact a verification level. Nothing is overwritten.
 
 ## Deployment
 
-Target: Robinhood Chain mainnet (chain id 4663). Not deployed yet. `deployments/mainnet.json` appears
-after the deploy. An earlier MVP build (registry and event log only) went to mainnet on 2026-09-17;
+Robinhood Chain mainnet (chain id 4663), deployed 2026-10-12 from block 86750023. Deployer and admin of
+every contract: `0x28d836E46c698Ccc530B4D981b089eC14bE39757`.
+
+| Contract | Address | Deploy transaction |
+| --- | --- | --- |
+| PaxelRegistry (also access control) | [`0x6e802BC4639A04c60a60152fe79982325cc0BeCF`](https://robinhoodchain.blockscout.com/address/0x6e802BC4639A04c60a60152fe79982325cc0BeCF) | [`0x33401440…1080af`](https://robinhoodchain.blockscout.com/tx/0x3340144073fba170d310d75b12c08d1891c8d049f42b14a42229978f481080af) |
+| PaxelEventLog | [`0xF7286763f630B526f55dB8883F4Cf1100c49C89E`](https://robinhoodchain.blockscout.com/address/0xF7286763f630B526f55dB8883F4Cf1100c49C89E) | [`0x23c8184b…3b2b13`](https://robinhoodchain.blockscout.com/tx/0x23c8184b48ff5483d2c5392ef8ed514bdbb503fa45ec6a7430d6ab551d3b2b13) |
+| PaxelAttestationRegistry | [`0x8d2744Ddd20B32A3E23c3eb086091265e52a3426`](https://robinhoodchain.blockscout.com/address/0x8d2744Ddd20B32A3E23c3eb086091265e52a3426) | [`0x51d4ad5a…4c4b90`](https://robinhoodchain.blockscout.com/tx/0x51d4ad5a0606e29271b87226220252a855f47850d511f23ab57ba0f5a64c4b90) |
+
+`deployments/mainnet.json` holds the same values. Checked on chain after deploy: the deployer holds
+`DEFAULT_ADMIN_ROLE`, and both `PaxelEventLog.registry()` and `PaxelAttestationRegistry.registry()` return
+the registry address.
+
+Source verification: Blockscout's API sits behind a Cloudflare challenge, so `forge verify-contract` cannot
+reach it. Verify in the Blockscout UI with **Solidity (Standard JSON input)**, compiler `v0.8.28`, using the
+files in `deployments/verify/`. The event log and attestation registry take the constructor argument in
+their `.constructor-args.txt` file.
+
+An earlier MVP build (registry and event log only) went to mainnet on 2026-09-17;
 its record is kept in `deployments/archive-2026-09-17/` and the web no longer uses it.
 
 ## Contracts

@@ -1,0 +1,11 @@
+{
+  "network": "Robinhood Chain",
+  "chainId": 4663,
+  "deployer": "0x28d836E46c698Ccc530B4D981b089eC14bE39757",
+  "passportRegistry": "0x6e802BC4639A04c60a60152fe79982325cc0BeCF",
+  "eventLog": "0xF7286763f630B526f55dB8883F4Cf1100c49C89E",
+  "accessControl": "0x6e802BC4639A04c60a60152fe79982325cc0BeCF",
+  "attestationRegistry": "0x8d2744Ddd20B32A3E23c3eb086091265e52a3426",
+  "deployBlock": 86749920,
+  "explorerBaseUrl": "https://robinhoodchain.blockscout.com"
+}
